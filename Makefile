@@ -3,6 +3,7 @@ UNAME=$(shell uname)
 SHORTHASH=$(shell git rev-parse --short HEAD)
 VERSION=$(shell cat VERSION)-$(SHORTHASH)
 FILEVERSION=$(VERSION)-$(UNAME)-$(ARCH)
+DOCKERTAG=gomrefdash
 
 all: gomrefdash
 
@@ -21,11 +22,23 @@ gomrefdash-$(FILEVERSION).tar.gz: gomrefdash
 
 .PHONY: docker
 docker:
-	docker build -t gomrefdash .
+	docker build -t $(DOCKERTAG) .
 
 .PHONY: docker-clean
 docker-clean:
-	-docker image rm gomrefdash
+	-docker image rm $(DOCKERTAG)
+
+.PHONY: docker-multi
+docker-multi:
+	docker buildx build --platform linux/arm/v7 -t $(DOCKERTAG):$(VERSION)-armv7 .
+	docker buildx build --platform linux/amd64 -t $(DOCKERTAG):$(VERSION)-amd64 .
+	docker tag $(DOCKERTAG):$(VERSION)-armv7 $(DOCKERTAG):armv7
+	docker tag $(DOCKERTAG):$(VERSION)-amd64 $(DOCKERTAG):amd64
+	docker push $(DOCKERTAG):$(VERSION)-armv7
+	docker push $(DOCKERTAG):armv7
+	docker push $(DOCKERTAG):$(VERSION)-amd64
+	docker push $(DOCKERTAG):amd64
+	
 
 .PHONY: docker-compose-up
 docker-compose-up:
